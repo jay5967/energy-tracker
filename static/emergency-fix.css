@@ -40,7 +40,7 @@
 /* Fix chart sizes on mobile */
 @media (max-width: 768px) {
     /* Heading styles */
-    h1, h2, h3 {
+    h1, h2, h3, .card-title {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
         letter-spacing: -0.02em !important;
     }
@@ -51,7 +51,7 @@
         margin-bottom: 1rem !important;
     }
 
-    h2 {
+    h2, .chart-title {
         font-size: 1.5rem !important;
         font-weight: 600 !important;
         margin-bottom: 0.75rem !important;
@@ -61,6 +61,37 @@
         font-size: 1.25rem !important;
         font-weight: 600 !important;
         margin-bottom: 0.5rem !important;
+    }
+
+    /* Style card titles */
+    .card-title {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.75rem !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Ensure emojis align properly with text */
+    .card-title {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Apply consistent font to chart titles */
+    #energyChart, #categoryChart, #timeSpentChart {
+        margin-top: 1.5rem !important;
+    }
+
+    #energyChart::before, #categoryChart::before, #timeSpentChart::before {
+        content: attr(data-title) !important;
+        display: block !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em !important;
+        margin-bottom: 1rem !important;
     }
 
     .chart-container {
