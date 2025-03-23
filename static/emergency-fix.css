@@ -33,4 +33,144 @@
 
 .energy-level-bar.negative .bar.after {
     background: red !important;
+}
+
+/* Emergency mobile fixes */
+
+/* Fix chart sizes on mobile */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 300px !important;
+        margin-bottom: 2rem !important;
+    }
+
+    /* Ensure charts are visible */
+    canvas {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Fix form layout on mobile */
+@media (max-width: 768px) {
+    .form-group {
+        width: 100% !important;
+    }
+
+    /* Make inputs more touch-friendly */
+    input, select, button {
+        min-height: 48px !important;
+        font-size: 16px !important; /* Prevent iOS zoom */
+    }
+
+    /* Fix duration controls */
+    .duration-controls {
+        display: grid !important;
+        grid-template-columns: 44px 1fr 44px !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    .duration-input-group {
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Fix activity cards */
+    .activity-item {
+        margin: 0.5rem 0 !important;
+        padding: 1rem !important;
+    }
+
+    .activity-metadata {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Fix stats cards layout */
+    .insights-cards {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+        padding: 0.5rem !important;
+    }
+
+    /* Fix header spacing */
+    .section-header {
+        padding: 1rem !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    /* Fix filter controls */
+    .filter-section {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    #categoryFilter, #timeRange {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* Fix button layout */
+    .btn {
+        width: 100% !important;
+        margin: 0.25rem 0 !important;
+        justify-content: center !important;
+    }
+
+    /* Fix energy scale */
+    .energy-scale {
+        padding: 0 0.5rem !important;
+    }
+
+    .energy-scale span {
+        font-size: 14px !important;
+    }
+
+    /* Fix chart legends */
+    .chartjs-legend {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+        margin-top: 1rem !important;
+    }
+
+    /* Fix container padding */
+    .container {
+        padding: 1rem !important;
+    }
+
+    /* Remove border from body */
+    body {
+        border: none !important;
+    }
+}
+
+/* Fix iOS-specific issues */
+@supports (-webkit-touch-callout: none) {
+    /* Fix input zoom */
+    input[type="text"],
+    input[type="number"],
+    select {
+        font-size: 16px !important;
+    }
+
+    /* Fix sticky hover */
+    .btn:hover {
+        background-color: initial !important;
+    }
+}
+
+/* Fix Android-specific issues */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    select,
+    textarea,
+    input {
+        font-size: 16px !important;
+    }
 } 
