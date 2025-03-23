@@ -49,6 +49,12 @@
         width: 100% !important;
         max-width: 100% !important;
     }
+
+    /* Fix pro tip padding */
+    .form-text {
+        padding: 0.75rem 0 !important;
+        display: block !important;
+    }
 }
 
 /* Fix form layout on mobile */
