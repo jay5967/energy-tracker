@@ -51,6 +51,7 @@ class Activity(db.Model):
     energy_after = db.Column(db.Integer, nullable=False)
     duration_minutes = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    user_id = db.Column(db.String(100), nullable=False)
 
     def to_dict(self):
         return {
@@ -60,7 +61,8 @@ class Activity(db.Model):
             'energy_before': self.energy_before,
             'energy_after': self.energy_after,
             'duration_minutes': self.duration_minutes,
-            'timestamp': self.timestamp.isoformat()
+            'timestamp': self.timestamp.isoformat(),
+            'user_id': self.user_id
         }
 
 # Create tables
@@ -108,61 +110,43 @@ def index():
 @app.route('/api/activities', methods=['GET'])
 def get_activities():
     try:
-        logger.info("Fetching activities")
-        category = request.args.get('category')
-        if category and category != "All Categories":
-            activities = Activity.query.filter_by(category=category).all()
-        else:
-            activities = Activity.query.all()
+        user_id = request.args.get('userId')
+        logger.info(f"Fetching activities for user: {user_id}")
+        
+        if not user_id:
+            return jsonify([])
+
+        activities = Activity.query.filter_by(user_id=user_id).order_by(Activity.timestamp.desc()).all()
         return jsonify([activity.to_dict() for activity in activities])
     except Exception as e:
         logger.error(f"Error fetching activities: {str(e)}")
-        return jsonify({'error': 'Failed to fetch activities'}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/activities', methods=['POST'])
 def create_activity():
     try:
-        logger.info("Creating new activity")
         data = request.get_json()
+        user_id = request.args.get('userId')
         
-        # Validate required fields
-        required_fields = ['name', 'energy_before', 'energy_after', 'duration_minutes']
-        missing_fields = [field for field in required_fields if field not in data]
-        if missing_fields:
-            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
-        
-        # Validate data types and ranges
-        try:
-            energy_before = int(data['energy_before'])
-            energy_after = int(data['energy_after'])
-            duration_minutes = float(data['duration_minutes'])
-            
-            if not (1 <= energy_before <= 10 and 1 <= energy_after <= 10):
-                return jsonify({'error': 'Energy levels must be between 1 and 10'}), 400
-                
-            if duration_minutes <= 0:
-                return jsonify({'error': 'Duration must be greater than 0'}), 400
-        except ValueError as e:
-            return jsonify({'error': f'Invalid data type: {str(e)}'}), 400
-        
-        # Create new activity
+        if not user_id:
+            return jsonify({"error": "User ID is required"}), 400
+
         activity = Activity(
             name=data['name'],
-            category=data.get('category'),
-            energy_before=energy_before,
-            energy_after=energy_after,
-            duration_minutes=duration_minutes
+            category=data.get('category', 'Other'),
+            energy_before=data['energy_before'],
+            energy_after=data['energy_after'],
+            duration_minutes=data['duration_minutes'],
+            user_id=user_id
         )
         
         db.session.add(activity)
         db.session.commit()
-        logger.info(f"Successfully created activity: {activity.name}")
         
-        return jsonify(activity.to_dict()), 201
+        return jsonify(activity.to_dict())
     except Exception as e:
         logger.error(f"Error creating activity: {str(e)}")
-        db.session.rollback()
-        return jsonify({'error': 'Failed to create activity'}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/activities/<int:id>', methods=['GET'])
 def get_activity(id):
@@ -239,57 +223,62 @@ def delete_activity(id):
         db.session.rollback()
         return jsonify({'error': 'Failed to delete activity'}), 500
 
-@app.route('/api/stats')
+@app.route('/api/stats', methods=['GET'])
 def get_stats():
     try:
-        logger.info("Fetching statistics")
-        activities = Activity.query.all()
-        total_activities = len(activities)
+        user_id = request.args.get('userId')
+        logger.info(f"Fetching statistics for user: {user_id}")
         
-        if total_activities == 0:
+        if not user_id:
             return jsonify({
-                'total_activities': 0,
-                'avg_energy_change': 0,
-                'most_energizing': {'category': '-', 'change': 0},
-                'most_draining': {'category': '-', 'change': 0}
+                "total_activities": 0,
+                "avg_energy_change": 0,
+                "most_energizing": None,
+                "most_draining": None
             })
+
+        activities = Activity.query.filter_by(user_id=user_id).all()
         
-        # Calculate energy changes
+        if not activities:
+            return jsonify({
+                "total_activities": 0,
+                "avg_energy_change": 0,
+                "most_energizing": None,
+                "most_draining": None
+            })
+
+        # Calculate statistics
+        total = len(activities)
         energy_changes = [a.energy_after - a.energy_before for a in activities]
-        avg_energy_change = sum(energy_changes) / total_activities
+        avg_change = sum(energy_changes) / total if total > 0 else 0
         
-        # Calculate category statistics
-        category_stats = {}
+        # Group by category and calculate average energy change
+        category_changes = {}
         for activity in activities:
-            if not activity.category:
-                continue
-                
             change = activity.energy_after - activity.energy_before
-            if activity.category not in category_stats:
-                category_stats[activity.category] = {'total_change': 0, 'count': 0}
-            category_stats[activity.category]['total_change'] += change
-            category_stats[activity.category]['count'] += 1
-        
+            if activity.category not in category_changes:
+                category_changes[activity.category] = {"total": 0, "count": 0}
+            category_changes[activity.category]["total"] += change
+            category_changes[activity.category]["count"] += 1
+
         # Find most energizing and draining categories
-        most_energizing = {'category': '-', 'change': 0}
-        most_draining = {'category': '-', 'change': 0}
+        category_averages = {
+            cat: data["total"] / data["count"]
+            for cat, data in category_changes.items()
+        }
         
-        for category, stats in category_stats.items():
-            avg_change = stats['total_change'] / stats['count']
-            if avg_change > most_energizing['change']:
-                most_energizing = {'category': category, 'change': round(avg_change, 1)}
-            if avg_change < most_draining['change']:
-                most_draining = {'category': category, 'change': round(avg_change, 1)}
-        
+        most_energizing = max(category_averages.items(), key=lambda x: x[1])[0] if category_averages else None
+        most_draining = min(category_averages.items(), key=lambda x: x[1])[0] if category_averages else None
+
         return jsonify({
-            'total_activities': total_activities,
-            'avg_energy_change': round(avg_energy_change, 1),
-            'most_energizing': most_energizing,
-            'most_draining': most_draining
+            "total_activities": total,
+            "avg_energy_change": round(avg_change, 2),
+            "most_energizing": most_energizing,
+            "most_draining": most_draining
         })
     except Exception as e:
         logger.error(f"Error calculating statistics: {str(e)}")
-        return jsonify({'error': 'Failed to calculate statistics'}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.errorhandler(Exception)
 def handle_error(error):

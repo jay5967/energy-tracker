@@ -353,117 +353,60 @@ function formatDuration(minutes) {
 // Load and display activities
 async function loadActivities() {
     try {
-        console.log('Loading activities...');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const selectedCategory = categoryFilter ? categoryFilter.value : null;
-        console.log('Selected category:', selectedCategory);
-        
-        const url = `/api/activities${selectedCategory ? `?category=${selectedCategory}` : ''}`;
-        const activities = await fetchWithRetry(url);
-        console.log('Fetched activities:', activities);
-        
-        const activityList = document.getElementById('activitiesList');
-        console.log('Activity list element found:', !!activityList);
-        activityList.innerHTML = '';
-        
-        activities.forEach(activity => {
-            console.log('Creating activity element for:', activity.name);
-            const energyChange = activity.energy_after - activity.energy_before;
-            const isPositive = energyChange > 0;
-            
-            // Calculate energy bar widths (convert 1-10 scale to percentages for display)
-            const beforeWidth = (activity.energy_before / 10) * 100;
-            const afterWidth = (activity.energy_after / 10) * 100;
-            console.log(`Energy bars for ${activity.name}:`, {
-                before: beforeWidth,
-                after: afterWidth,
-                energyChange: energyChange,
-                isPositive: isPositive
-            });
-            
-            const activityElement = document.createElement('div');
-            activityElement.className = `activity-item ${isPositive ? 'positive' : 'negative'}`;
-            
-            const categoryClass = activity.category ? `category-${activity.category}` : '';
-            
-            activityElement.innerHTML = `
-                <div class="card-body">
-                    <div class="activity-header">
-                        <span class="category-badge ${categoryClass}">
-                            ${getCategoryIcon(activity.category)} ${activity.category || 'Uncategorized'}
-                        </span>
-                    </div>
-                    <h5 class="activity-title">${activity.name}</h5>
-                    
-                    <div style="height: 24px; background: #f8f9fa; border-radius: 12px; overflow: hidden; position: relative; margin: 1rem 0; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);"
-                         data-before="${activity.energy_before}" 
-                         data-after="${activity.energy_after}">
-                        <div style="height: 100%; position: absolute; left: 0; background: linear-gradient(90deg, #6c757d 0%, #adb5bd 100%); z-index: 1; width: ${beforeWidth}%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                        <div style="height: 100%; position: absolute; left: 0; background: ${
-                            isPositive 
-                                ? 'linear-gradient(90deg, #28a745 0%, #34ce57 100%)' 
-                                : 'linear-gradient(90deg, #dc3545 0%, #e4606d 100%)'
-                            }; z-index: 2; width: ${afterWidth}%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-                    </div>
-                    
-                    <div class="activity-metadata">
-                        <span>
-                            ⏰ ${formatDuration(activity.duration_minutes)}
-                        </span>
-                        <span>
-                            ${isPositive ? '⬆️' : '⬇️'} ${energyChange > 0 ? '+' : ''}${energyChange} energy
-                        </span>
-                        <span>
-                            📅 ${new Date(activity.timestamp).toLocaleDateString()}
-                        </span>
-                    </div>
-                    
-                    <div class="activity-actions">
-                        <button class="btn btn-edit" onclick="editActivity(${activity.id})">
-                            ✏️ Edit
-                        </button>
-                        <button class="btn btn-delete" onclick="deleteActivity(${activity.id})">
-                            🗑️ Delete
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            activityList.appendChild(activityElement);
-            
-            // Verify the energy bars after being added to DOM
-            const addedEnergyBar = activityElement.querySelector('div[data-before]');
-            const beforeBar = addedEnergyBar.children[0];
-            const afterBar = addedEnergyBar.children[1];
-            
-            console.log('Energy bars in DOM:', {
-                barExists: !!addedEnergyBar,
-                beforeBarExists: !!beforeBar,
-                afterBarExists: !!afterBar,
-                beforeWidth: beforeBar?.style.width,
-                afterWidth: afterBar?.style.width
-            });
-        });
+        const response = await fetchWithUserId('/api/activities');
+        const activities = await response.json();
+        window.currentActivities = activities;
+        displayActivities(activities);
+        updateStats();
+        createEnergyChart(activities);
+        createCategoryChart(activities);
     } catch (error) {
         console.error('Error loading activities:', error);
-        showNotification('Failed to load activities. Please try again.', 'danger');
     }
 }
 
-// Load and display statistics
-async function loadStats() {
+async function submitActivity(event) {
+    event.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('activityName').value,
+        category: document.getElementById('category').value,
+        energy_before: parseInt(document.getElementById('energyBefore').value),
+        energy_after: parseInt(document.getElementById('energyAfter').value),
+        duration_minutes: parseInt(document.getElementById('duration').value)
+    };
+
     try {
-        const stats = await fetchWithRetry('/api/stats');
-        document.getElementById('totalActivities').textContent = stats.total_activities;
-        document.getElementById('avgEnergyChange').textContent = 
-            `${stats.avg_energy_change > 0 ? '+' : ''}${stats.avg_energy_change}`;
-        document.getElementById('mostEnergizing').textContent = 
-            `${stats.most_energizing.category} (${stats.most_energizing.change > 0 ? '+' : ''}${stats.most_energizing.change})`;
-        document.getElementById('mostDraining').textContent = 
-            `${stats.most_draining.category} (${stats.most_draining.change > 0 ? '+' : ''}${stats.most_draining.change})`;
+        const response = await fetchWithUserId('/api/activities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            document.getElementById('activityForm').reset();
+            await loadActivities();
+        } else {
+            console.error('Failed to submit activity');
+        }
     } catch (error) {
-        console.error('Error loading stats:', error);
-        showNotification('Failed to load statistics. Please try again.', 'danger');
+        console.error('Error submitting activity:', error);
+    }
+}
+
+async function updateStats() {
+    try {
+        const response = await fetchWithUserId('/api/stats');
+        const stats = await response.json();
+        
+        document.getElementById('totalActivities').textContent = stats.total_activities;
+        document.getElementById('avgEnergyChange').textContent = stats.avg_energy_change;
+        document.getElementById('mostEnergizing').textContent = stats.most_energizing || '-';
+        document.getElementById('mostDraining').textContent = stats.most_draining || '-';
+    } catch (error) {
+        console.error('Error updating stats:', error);
     }
 }
 
