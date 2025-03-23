@@ -52,6 +52,17 @@ class Activity(db.Model):
     duration_minutes = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'energy_before': self.energy_before,
+            'energy_after': self.energy_after,
+            'duration_minutes': self.duration_minutes,
+            'timestamp': self.timestamp.isoformat()
+        }
+
 # Create tables
 with app.app_context():
     try:
