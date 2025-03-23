@@ -39,6 +39,30 @@
 
 /* Fix chart sizes on mobile */
 @media (max-width: 768px) {
+    /* Heading styles */
+    h1, h2, h3 {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    h1 {
+        font-size: 1.75rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 1rem !important;
+    }
+
+    h2 {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    h3 {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
     .chart-container {
         height: 300px !important;
         margin-bottom: 2rem !important;
