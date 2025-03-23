@@ -1,0 +1,36 @@
+.energy-level-bar {
+    height: 24px !important;
+    background: #f8f9fa !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    margin: 1rem 0 !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.energy-level-bar .bar {
+    height: 100% !important;
+    position: absolute !important;
+    left: 0 !important;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.energy-level-bar .bar.before {
+    background: blue !important;
+    z-index: 1 !important;
+}
+
+.energy-level-bar .bar.after {
+    background: green !important;
+    z-index: 2 !important;
+}
+
+.energy-level-bar.negative .bar.after {
+    background: red !important;
+} 

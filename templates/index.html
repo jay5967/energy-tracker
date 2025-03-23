@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Tracker</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/L0HPbRK4NkwQX4LAzG" crossorigin="anonymous">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Emergency Fix CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='emergency-fix.css') }}">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Verify CSS loading -->
+    <style>
+        .css-loaded-test {
+            display: none;
+            border: 5px solid blue;
+        }
+    </style>
+</head>
+<body>
+    <!-- CSS loading test element -->
+    <div class="css-loaded-test"></div>
+    
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Energy Tracker</h1>
+        
+        <!-- Dashboard Section -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Activities</h5>
+                        <h2 class="card-subtitle" id="totalActivities">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Avg Energy Change</h5>
+                        <h2 class="card-subtitle" id="avgEnergyChange">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Most Energizing</h5>
+                        <h2 class="card-subtitle" id="mostEnergizing">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Most Draining</h5>
+                        <h2 class="card-subtitle" id="mostDraining">-</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Add New Activity</h5>
+                <form id="activityForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="activityName" class="form-label">Activity Name</label>
+                            <input type="text" class="form-control" id="activityName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" required>
+                                <option value="">Select a category</option>
+                                <option value="Exercise">Exercise</option>
+                                <option value="Work">Work</option>
+                                <option value="Social">Social</option>
+                                <option value="Rest">Rest</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="energyBefore" class="form-label">Energy Before (1-10)</label>
+                        <div class="energy-slider-container">
+                            <input type="range" class="form-range" id="energyBefore" min="1" max="10" value="5" step="1">
+                            <div class="energy-scale">
+                                <span>Low</span>
+                                <span id="energyBeforeValue">5</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="energyAfter" class="form-label">Energy After (1-10)</label>
+                        <div class="energy-slider-container">
+                            <input type="range" class="form-range" id="energyAfter" min="1" max="10" value="5" step="1">
+                            <div class="energy-scale">
+                                <span>Low</span>
+                                <span id="energyAfterValue">5</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="duration" class="form-label">Duration</label>
+                            <div class="duration-input-group">
+                                <div class="duration-controls">
+                                    <button type="button" id="decreaseDuration" class="duration-btn">-</button>
+                                    <input type="number" class="form-control duration-value" id="duration" min="5" value="30">
+                                    <button type="button" id="increaseDuration" class="duration-btn">+</button>
+                                </div>
+                                <select class="form-select duration-unit" id="durationUnit">
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
+                                </select>
+                            </div>
+                            <small class="text-muted duration-hint">How long did this activity last?</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">Add Activity</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Replace the Activity List section -->
+        <div class="activities-section">
+            <div class="section-header">
+                <h2>Activities</h2>
+                <button id="toggleActivities" class="toggle-btn">
+                    <span class="toggle-icon">▼</span> <span class="toggle-text">Hide Activities</span>
+                </button>
+                <div class="filter-container">
+                    <select id="categoryFilter" class="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="Exercise">Exercise</option>
+                        <option value="Work">Work</option>
+                        <option value="Social">Social</option>
+                        <option value="Rest">Rest</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="activitiesList" class="activities-container">
+                <!-- Activities will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Energy Insights Section -->
+        <div class="container mt-5">
+            <h2 class="text-center mb-4" style="font-family: 'Comic Sans MS', cursive;">Your Energy Journey! 🚀</h2>
+            
+            <!-- Add Time Range Filter -->
+            <div class="time-filter-container">
+                <label for="timeRange">View data for: </label>
+                <select id="timeRange" class="time-range-select">
+                    <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 3 months</option>
+                    <option value="all" selected>All time</option>
+                </select>
+            </div>
+            
+            <div class="row">
+                <div class="col-12 mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-center" style="font-family: 'Comic Sans MS', cursive;">How Your Energy Changes 📈</h5>
+                            <p class="text-center text-muted mb-4">See how your energy goes up and down during the week!</p>
+                            <div style="height: 300px;">
+                                <canvas id="energyTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-center" style="font-family: 'Comic Sans MS', cursive;">What Makes You Feel Good? 🌟</h5>
+                            <p class="text-center text-muted mb-4">Which activities give you more energy?</p>
+                            
+                            <!-- Add Top Booster Box -->
+                            <div id="topBoosterBox" class="top-booster-box">
+                                <div class="booster-icon">🌟</div>
+                                <div class="booster-content">
+                                    <div class="booster-title">Top Energy Booster</div>
+                                    <div class="booster-value" id="topBoosterValue">Loading...</div>
+                                </div>
+                            </div>
+                            
+                            <div style="height: 300px;">
+                                <canvas id="categoryRoiChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-center" style="font-family: 'Comic Sans MS', cursive;">Time Spent on Activities ⏰</h5>
+                            <p class="text-center text-muted mb-4">How you spend your time each day!</p>
+                            <div style="height: 300px;">
+                                <canvas id="timeDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add this between the charts section and the bottom of the page -->
+        <div class="insights-container">
+            <h2 class="insights-title">📊 Your Energy Insights</h2>
+            <div class="insights-cards">
+                <div class="insight-card">
+                    <div class="insight-icon">💡</div>
+                    <div class="insight-content">
+                        <h3 class="insight-heading">Top Recommendation</h3>
+                        <p class="insight-text" id="topRecommendation">Loading recommendation...</p>
+                    </div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">⚠️</div>
+                    <div class="insight-content">
+                        <h3 class="insight-heading">Energy Drain Alert</h3>
+                        <p class="insight-text" id="energyDrainAlert">Loading alert...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <!-- CSS loading test script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Testing if custom CSS is loaded...');
+            const testElement = document.querySelector('.css-loaded-test');
+            const computedStyle = window.getComputedStyle(testElement);
+            console.log('CSS test element border:', computedStyle.border);
+        });
+    </script>
+</body>
+</html> 
