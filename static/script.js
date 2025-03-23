@@ -1209,4 +1209,164 @@ function initializeActivitiesToggle() {
         // Save preference
         localStorage.setItem('activitiesCollapsed', isNowCollapsed);
     });
-} 
+}
+
+function createEnergyChart(activities) {
+    const ctx = document.getElementById('energyChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (window.energyChart) {
+        window.energyChart.destroy();
+    }
+
+    window.energyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Energy Level',
+                data: activities.map(activity => ({
+                    x: new Date(activity.timestamp),
+                    y: activity.energy_after
+                })),
+                borderColor: '#4CAF50',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: window.innerWidth < 768 ? 'bottom' : 'right',
+                    labels: {
+                        boxWidth: window.innerWidth < 768 ? 12 : 15,
+                        font: {
+                            size: window.innerWidth < 768 ? 12 : 14
+                        }
+                    }
+                },
+                tooltip: {
+                    titleFont: {
+                        size: window.innerWidth < 768 ? 12 : 14
+                    },
+                    bodyFont: {
+                        size: window.innerWidth < 768 ? 11 : 13
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day'
+                    },
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCategoryChart(activities) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (window.categoryChart) {
+        window.categoryChart.destroy();
+    }
+
+    // Calculate average energy change per category
+    const categoryData = {};
+    activities.forEach(activity => {
+        if (!categoryData[activity.category]) {
+            categoryData[activity.category] = {
+                total: 0,
+                count: 0
+            };
+        }
+        categoryData[activity.category].total += (activity.energy_after - activity.energy_before);
+        categoryData[activity.category].count += 1;
+    });
+
+    const categories = Object.keys(categoryData);
+    const averages = categories.map(cat => 
+        categoryData[cat].total / categoryData[cat].count
+    );
+
+    window.categoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categories,
+            datasets: [{
+                label: 'Average Energy Change',
+                data: averages,
+                backgroundColor: averages.map(val => 
+                    val >= 0 ? 'rgba(76, 175, 80, 0.6)' : 'rgba(244, 67, 54, 0.6)'
+                )
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: window.innerWidth < 768 ? 'bottom' : 'right',
+                    labels: {
+                        boxWidth: window.innerWidth < 768 ? 12 : 15,
+                        font: {
+                            size: window.innerWidth < 768 ? 12 : 14
+                        }
+                    }
+                },
+                tooltip: {
+                    titleFont: {
+                        size: window.innerWidth < 768 ? 12 : 14
+                    },
+                    bodyFont: {
+                        size: window.innerWidth < 768 ? 11 : 13
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Add resize handler for charts
+window.addEventListener('resize', () => {
+    if (window.energyChart) {
+        createEnergyChart(window.currentActivities || []);
+    }
+    if (window.categoryChart) {
+        createCategoryChart(window.currentActivities || []);
+    }
+}); 

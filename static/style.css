@@ -1167,4 +1167,156 @@ input:focus, select:focus, textarea:focus {
 .category-filter:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Mobile-friendly styles */
+@media (max-width: 768px) {
+    /* Chart containers */
+    .chart-container {
+        min-height: 250px;
+        margin-bottom: 2rem;
+    }
+
+    /* Layout adjustments */
+    .container {
+        padding: 1rem;
+    }
+
+    .row {
+        margin: 0 -0.5rem;
+    }
+
+    /* Stats cards */
+    .insights-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    /* Form elements */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        font-size: 1rem;
+        height: 40px;
+    }
+
+    /* Activity items */
+    .activity-item {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .activity-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .activity-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Energy scale */
+    .energy-scale {
+        flex-direction: row;
+        justify-content: space-between;
+        margin: 0.5rem 0;
+    }
+
+    .energy-scale span {
+        font-size: 0.9rem;
+    }
+
+    .energy-level-bar {
+        height: 16px;
+        margin: 0.5rem 0;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+
+    /* Filter section */
+    .filter-section {
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-section select {
+        width: 100%;
+    }
+
+    /* Toggle button */
+    .toggle-btn {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Section headers */
+    .section-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Duration controls */
+    .duration-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .duration-input-group {
+        width: 100%;
+    }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+    .btn,
+    .form-control,
+    select,
+    .toggle-btn {
+        min-height: 44px; /* Minimum touch target size */
+    }
+
+    /* Add spacing between touch targets */
+    .btn + .btn {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Improve chart responsiveness */
+.chart-wrapper {
+    position: relative;
+    margin: auto;
+    width: 100%;
+}
+
+/* Ensure proper spacing on all devices */
+.section {
+    margin-bottom: 2rem;
+}
+
+/* Improve form layout on all devices */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
 } 
