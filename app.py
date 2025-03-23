@@ -30,14 +30,31 @@ app = Flask(__name__)
 
 # Configure SQLAlchemy for different environments
 if os.environ.get('RENDER'):
-    # Production database (you'll need to set this in Render's environment variables)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///energy_tracker.db')
+    # Production database
+    db_path = '/data/energy_tracker.db'
+    # Ensure the /data directory exists
+    os.makedirs('/data', exist_ok=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 else:
     # Development database
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///energy_tracker.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# Initialize database
+def init_db():
+    try:
+        with app.app_context():
+            logger.info("Initializing database...")
+            db.create_all()
+            logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing database: {str(e)}")
+        raise
+
+# Initialize database on startup
+init_db()
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,6 +97,13 @@ def ensure_db_schema():
             db.drop_all()
             db.create_all()
             logger.info("Database schema recreated successfully")
+
+# Create tables before first request
+@app.before_first_request
+def create_tables():
+    logger.info("Creating database tables...")
+    db.create_all()
+    logger.info("Database tables created successfully")
 
 @app.route('/')
 def index():
@@ -284,10 +308,6 @@ def handle_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    # Create tables
-    with app.app_context():
-        db.create_all()
-    
     # Run the app
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port) 
