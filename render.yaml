@@ -2,19 +2,14 @@ services:
   - type: web
     name: energy-tracker
     env: python
-    buildCommand: |
-      pip install -r requirements.txt
-      mkdir -p /data
-      chmod 777 /data
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.12
       - key: RENDER
         value: true
-      - key: DATABASE_URL
-        value: sqlite:///data/energy_tracker.db
     disk:
-      name: sqlite
+      name: data
       mountPath: /data
       sizeGB: 1 

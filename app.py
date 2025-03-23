@@ -28,53 +28,40 @@ def find_available_port(start_port=5000, max_port=5010):
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configure SQLAlchemy for different environments
+# Configure SQLAlchemy
 if os.environ.get('RENDER'):
-    # Production database
-    db_path = '/data/energy_tracker.db'
-    # Ensure the /data directory exists
+    # Ensure data directory exists
     os.makedirs('/data', exist_ok=True)
+    db_path = '/data/energy_tracker.db'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    logger.info(f"Using production database at {db_path}")
 else:
-    # Development database
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///energy_tracker.db'
+    logger.info("Using development database")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Initialize database
-def init_db():
-    try:
-        with app.app_context():
-            logger.info("Initializing database...")
-            db.create_all()
-            logger.info("Database initialized successfully")
-    except Exception as e:
-        logger.error(f"Error initializing database: {str(e)}")
-        raise
-
-# Initialize database on startup
-init_db()
-
+# Model definition
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    category = db.Column(db.String(50))
+    category = db.Column(db.String(50), nullable=False)
     energy_before = db.Column(db.Integer, nullable=False)
     energy_after = db.Column(db.Integer, nullable=False)
-    duration_minutes = db.Column(db.Float, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    duration_minutes = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'category': self.category,
-            'energy_before': self.energy_before,
-            'energy_after': self.energy_after,
-            'duration_minutes': self.duration_minutes,
-            'timestamp': self.timestamp.isoformat()
-        }
+# Create tables
+with app.app_context():
+    try:
+        logger.info("Creating database tables...")
+        db.create_all()
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Error creating database tables: {str(e)}")
+        # Continue execution even if there's an error
+        pass
 
 def ensure_db_schema():
     with app.app_context():
@@ -97,13 +84,6 @@ def ensure_db_schema():
             db.drop_all()
             db.create_all()
             logger.info("Database schema recreated successfully")
-
-# Create tables before first request
-@app.before_first_request
-def create_tables():
-    logger.info("Creating database tables...")
-    db.create_all()
-    logger.info("Database tables created successfully")
 
 @app.route('/')
 def index():
