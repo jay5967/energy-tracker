@@ -30,12 +30,9 @@ app = Flask(__name__)
 
 # Configure SQLAlchemy
 if os.environ.get('RENDER'):
-    # Get the project directory path
-    project_dir = os.environ.get('RENDER_PROJECT_DIR', os.path.abspath(os.path.dirname(__file__)))
-    # Create a data directory in the project directory
-    data_dir = os.path.join(project_dir, 'instance')
-    os.makedirs(data_dir, exist_ok=True)
-    db_path = os.path.join(data_dir, 'energy_tracker.db')
+    # Use the /opt/render/project/src directory for the database
+    db_path = '/opt/render/project/src/instance/energy_tracker.db'
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     logger.info(f"Using production database at {db_path}")
 else:
